@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>DECODE</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://hroy.eu/bootstrap/docs/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+
+</head>
+
+<style>
+    #btnLoader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid blue;
+        border-right: 16px solid green;
+        border-bottom: 16px solid red;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite;
+        /* Safari */
+        animation: spin 2s linear infinite;
+    }
+
+    /* Safari */
+    @-webkit-keyframes spin {
+        0% {
+            -webkit-transform: rotate(0deg);
+        }
+
+        100% {
+            -webkit-transform: rotate(360deg);
+        }
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <nav>
+                <ul class="nav nav-pills pull-right">
+                    <li role="presentation" class="active"><a href="/">Knowledge</a>
+                    </li>
+                    <li style="padding-left: 20px;" role="presentation"><a href="/showEncode">Let's Encode</a>
+                    </li>
+                    <li style="padding-left: 20px;" role="presentation"><a href="#">Let's Decode</a>
+                    </li>
+                </ul>
+            </nav>
+            <h3 class="text-muted">NHÓM 14</h3>
+        </div>
+        <!-- start audio to encode -->
+        <h4>Upload audio file</h4>
+        <form id="data" method="PORT" enctype="multipart/form-data">
+            <input type="file" id="decodeFile" name="file" />
+            <audio id="loadSrcDecodeFile" controls>
+                <source src="" id="srcDecodeFile" />
+            </audio>
+            <!-- end audio to encode -->
+            <br /> <br />
+            <!-- start secret message -->
+            <h4>Secret message length</h4>
+            <div class="form-group">
+                <input class="form-control" id="txtSecretLength" name="secret" type="number" style="width: 200px;" />
+            </div>
+            <!-- end secret message -->
+            <button class="btn btn-success" id="btnDecode">Decode</button>
+
+        </form>
+        <br />
+        <div style="display:none;" id="btnLoader"></div>
+        <br />
+        <p id='txtResult'>
+
+        </p>
+
+        <br /> <br />
+        <footer class="footer">
+            <p>&copy; Copyright 2021</p>
+        </footer>
+
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+
+    <script>
+        function handleDecodeFile(event) {
+            var files = event.target.files;
+            $("#srcDecodeFile").attr("src", URL.createObjectURL(files[0]));
+            document.getElementById("loadSrcDecodeFile").load();
+        }
+        document.getElementById("decodeFile").addEventListener("change", handleDecodeFile, false);
+        $(document).ready(function () {
+            // handle decode
+            $("form#data").submit(function (e) {
+                e.preventDefault();
+                let secretLength = parseInt($('#txtSecretLength').val());
+                if (!$('#decodeFile').val()) {
+                    return swal("Oops...", "Please upload audio file!", "error");
+                }
+                let reg = /(.*?)\.(wav)$/;
+                if (!$('#decodeFile').val().match(reg)) {
+                    return swal("Oops...", "Please upload only wav file!", "error");
+                }
+                if (!secretLength) {
+                    return swal("Oops...", "Please enter secret message length!", "error");
+                }
+                if (!Number.isInteger(secretLength)) {
+                    return swal("Oops...", "Please enter integer number!", "error");
+                }
+                if (secretLength <= 5 || secretLength > 2000) {
+                    return swal("Oops...", "Please enter integer number from 5 to 2000!", "error");
+                }
+                let formData = new FormData(this);
+                document.getElementById("btnLoader").style.display = "block";
+                $.ajax({
+                    url: '/handleDecode',
+                    type: 'POST',
+                    data: formData,
+                    success: function (resp) {
+                        let data = resp.data;
+                        $('#txtResult').empty();
+                        let result = `<span>Total Results: ${data.length}</span> <br /> `;
+                        data.forEach((item, index) => {
+                            result += ` <span>Result: ${index + 1} </span>
+                                    <div class="form-group">
+                                        <textarea class="form-control" rows="5">${item}</textarea>
+                                    </div>`
+                        });
+                        document.getElementById("btnLoader").style.display = "none";
+                        $('#txtResult').append(result)
+                        toastr.success('Decode successfully', 'Notification')
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
